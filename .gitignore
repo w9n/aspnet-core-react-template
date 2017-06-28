@@ -26,3 +26,4 @@ ops/*.retry
 # other
 *.js.map
 
+/.env
