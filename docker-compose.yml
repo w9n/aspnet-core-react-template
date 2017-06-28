@@ -1,17 +1,58 @@
-version: '2'
-services:
-  postgres:
-    image: postgres:9.5
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    ports:
-      - "5433:5432"
-  smtp:
-    image: jeanberu/mailcatcher
-    environment:
-      - SMTP_PORT=1025
-      - HTTP_PORT=1080
-    ports:
-      - "1025:1025"
-      - "1080:1080"
+  version: '2'
+
+  services:
+
+    web:
+      container_name: 'aspnetcoreapi'
+      image: 'aspnetcoreapi'
+      build:
+        context: .
+        dockerfile: Dockerfile
+      ports:
+        - "5000:5000"
+      depends_on:
+        - "postgres"
+      networks:
+         - aspnetcoreapp-network
+         - frontend
+      environment:
+         #.env is not supported in kompose
+         #- FRONTEND_URL='${FRONTENDURL}'
+         - frontEndUrl=http://127.0.0.1.nip.io
+         - VIRTUAL_HOST=127.0.0.1.nip.io
+
+    postgres:
+      container_name: 'postgres'
+      image: postgres
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+      ports:
+        - "5432:5432"
+      networks:
+        - aspnetcoreapp-network
+
+    smtp:
+      image: jeanberu/mailcatcher
+      environment:
+        - SMTP_PORT=1025
+        - HTTP_PORT=1080
+      # ports:
+        - "1025:1025"
+        - "1080:1080"
+
+    nginx-proxy:
+      image: jwilder/nginx-proxy
+      container_name: nginx-proxy
+      ports:
+        - "80:80"
+      volumes:
+        - /var/run/docker.sock:/tmp/docker.sock:ro
+      networks:
+        - frontend
+
+  networks:
+    aspnetcoreapp-network:
+      driver: bridge
+    frontend:
+      driver: bridge
